@@ -1,0 +1,38 @@
+# NOVELTY: Canary Deployment
+# Apply this file to start canary (v2 runs alongside v1)
+# kubectl apply -f ml-recommender-v2-canary.yaml
+# To rollback: kubectl delete -f ml-recommender-v2-canary.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ml-recommender-v2
+  namespace: movie-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ml-recommender-service
+      version: v2
+  template:
+    metadata:
+      labels:
+        app: ml-recommender-service
+        version: v2
+    spec:
+      containers:
+      - name: ml-recommender-v2
+        image: YOUR_DOCKERHUB_USERNAME/ml-recommender-v2-service:latest
+        ports:
+        - containerPort: 3004
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3004
+          initialDelaySeconds: 10
+          periodSeconds: 15
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 3004
+          initialDelaySeconds: 5
+          periodSeconds: 10

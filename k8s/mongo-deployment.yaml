@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mongo-service
+  namespace: movie-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mongo-service
+  template:
+    metadata:
+      labels:
+        app: mongo-service
+    spec:
+      containers:
+      - name: mongo
+        image: mongo:7.0
+        ports:
+        - containerPort: 27017
+        volumeMounts:
+        - name: mongo-storage
+          mountPath: /data/db
+        livenessProbe:
+          exec:
+            command: ["mongosh", "--eval", "db.adminCommand('ping')"]
+          initialDelaySeconds: 20
+          periodSeconds: 15
+        readinessProbe:
+          exec:
+            command: ["mongosh", "--eval", "db.adminCommand('ping')"]
+          initialDelaySeconds: 10
+          periodSeconds: 10
+      volumes:
+      - name: mongo-storage
+        emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongo-service
+  namespace: movie-app
+spec:
+  selector:
+    app: mongo-service
+  ports:
+  - port: 27017
+    targetPort: 27017

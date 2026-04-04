@@ -1,0 +1,94 @@
+version: '3.8'
+
+services:
+  # ── DATABASE ──────────────────────────────────────────────────────
+  mongo-service:
+    image: mongo:7.0
+    container_name: mongo-service
+    ports: ["27017:27017"]
+    volumes:
+      - mongo-data:/data/db
+    networks: [cinemax-net]
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── BACKEND SERVICES ──────────────────────────────────────────────
+  auth-service:
+    build: ./auth-service
+    image: devops-auth-service
+    ports: ["3001:3001"]
+    environment:
+      - JWT_SECRET=mysecret
+      - MONGO_URI=mongodb://mongo-service:27017/movieapp
+    depends_on:
+      mongo-service:
+        condition: service_healthy
+    networks: [cinemax-net]
+
+  ml-recommender-service:
+    build: ./ml-recommender-service
+    image: devops-ml-recommender-service
+    ports: ["3002:3002"]
+    networks: [cinemax-net]
+
+  fallback-recommender-service:
+    build: ./fallback-recommender-service
+    image: devops-fallback-recommender-service
+    ports: ["3003:3003"]
+    networks: [cinemax-net]
+
+  ml-recommender-v2-service:
+    build: ./ml-recommender-v2-service
+    image: devops-ml-recommender-v2-service
+    ports: ["3004:3004"]
+    networks: [cinemax-net]
+
+  api-gateway:
+    build: ./api-gateway
+    image: devops-api-gateway
+    ports: ["3000:3000"]
+    environment:
+      - JWT_SECRET=mysecret
+      - AUTH_URL=http://auth-service:3001
+      - ML_URL=http://ml-recommender-service:3002
+      - FALLBACK_URL=http://fallback-recommender-service:3003
+      - ML_V2_URL=http://ml-recommender-v2-service:3004
+    depends_on:
+      - auth-service
+      - ml-recommender-service
+      - fallback-recommender-service
+    networks: [cinemax-net]
+
+  # ── MONITORING ────────────────────────────────────────────────────
+  monitoring-service:
+    build: ./monitoring-service
+    image: devops-monitoring-service
+    ports: ["3005:3005"]
+    environment:
+      - AUTH_URL=http://auth-service:3001
+      - ML_URL=http://ml-recommender-service:3002
+      - FALLBACK_URL=http://fallback-recommender-service:3003
+      - ML_V2_URL=http://ml-recommender-v2-service:3004
+      - GW_URL=http://api-gateway:3000
+    depends_on:
+      - api-gateway
+    networks: [cinemax-net]
+
+  # ── FRONTEND ──────────────────────────────────────────────────────
+  frontend:
+    build: ./frontend
+    image: devops-frontend
+    ports: ["80:80"]
+    depends_on:
+      - api-gateway
+    networks: [cinemax-net]
+
+networks:
+  cinemax-net:
+    driver: bridge
+
+volumes:
+  mongo-data:

@@ -1,0 +1,58 @@
+---
+- name: Install Docker and Kubernetes on all nodes
+  hosts: all
+  become: yes
+  tasks:
+    - name: Update apt packages
+      apt:
+        update_cache: yes
+
+    - name: Install Docker
+      apt:
+        name: docker.io
+        state: present
+
+    - name: Start and enable Docker
+      service:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: Add Kubernetes apt key
+      apt_key:
+        url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+        state: present
+
+    - name: Add Kubernetes apt repository
+      apt_repository:
+        repo: deb https://apt.kubernetes.io/ kubernetes-xenial main
+        state: present
+
+    - name: Install kubeadm kubelet kubectl
+      apt:
+        name: [kubeadm, kubelet, kubectl]
+        state: present
+
+    - name: Enable kubelet
+      service:
+        name: kubelet
+        state: started
+        enabled: yes
+
+- name: Initialize Kubernetes master node
+  hosts: master
+  become: yes
+  tasks:
+    - name: Initialize kubeadm
+      command: kubeadm init --pod-network-cidr=10.244.0.0/16
+      ignore_errors: yes
+
+    - name: Setup kubeconfig for ubuntu user
+      shell: |
+        mkdir -p /home/ubuntu/.kube
+        cp /etc/kubernetes/admin.conf /home/ubuntu/.kube/config
+        chown ubuntu:ubuntu /home/ubuntu/.kube/config
+
+    - name: Apply Flannel network plugin
+      become: no
+      command: kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml

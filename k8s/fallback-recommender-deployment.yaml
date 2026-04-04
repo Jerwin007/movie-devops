@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fallback-recommender-service
+  namespace: movie-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fallback-recommender-service
+  template:
+    metadata:
+      labels:
+        app: fallback-recommender-service
+    spec:
+      containers:
+      - name: fallback-recommender
+        image: YOUR_DOCKERHUB_USERNAME/fallback-recommender-service:latest
+        ports:
+        - containerPort: 3003
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3003
+          initialDelaySeconds: 10
+          periodSeconds: 15
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 3003
+          initialDelaySeconds: 5
+          periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fallback-recommender-service
+  namespace: movie-app
+spec:
+  selector:
+    app: fallback-recommender-service
+  ports:
+  - port: 3003
+    targetPort: 3003
