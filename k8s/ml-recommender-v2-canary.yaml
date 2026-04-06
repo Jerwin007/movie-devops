@@ -21,7 +21,7 @@ spec:
     spec:
       containers:
       - name: ml-recommender-v2
-        image: YOUR_DOCKERHUB_USERNAME/ml-recommender-v2-service:latest
+        image: jerwin01/ml-recommender-v2-service:latest
         ports:
         - containerPort: 3004
         livenessProbe:

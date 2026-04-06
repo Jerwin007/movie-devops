@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: fallback-recommender
-        image: YOUR_DOCKERHUB_USERNAME/fallback-recommender-service:latest
+        image: jerwin01/fallback-recommender-service:latest
         ports:
         - containerPort: 3003
         livenessProbe:

@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: api-gateway
-        image: YOUR_DOCKERHUB_USERNAME/api-gateway:latest
+        image: jerwin01/api-gateway:latest
         ports:
         - containerPort: 3000
         env:

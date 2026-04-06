@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: monitoring
-        image: YOUR_DOCKERHUB_USERNAME/monitoring-service:latest
+        image: jerwin01/monitoring-service:latest
         ports:
         - containerPort: 3005
         env:
